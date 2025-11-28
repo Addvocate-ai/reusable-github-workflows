@@ -1,0 +1,110 @@
+name: Reusable Slack Notification
+
+on:
+  workflow_call:
+    inputs:
+      project_name:
+        description: 'The name of the project'
+        required: true
+        type: string
+      image_tag:
+        description: 'The Docker image tag'
+        required: true
+        type: string
+      environment:
+        description: 'The deployment environment (e.g., Staging, Production)'
+        required: false
+        type: string
+        default: 'N/A'
+      build_result:
+        description: 'The result of the build job'
+        required: true
+        type: string
+      deploy_result:
+        description: 'The result of the deploy job'
+        required: true
+        type: string
+      run_id:
+        description: 'The ID of the workflow run'
+        required: true
+        type: string
+      repository:
+        description: 'The repository name'
+        required: true
+        type: string
+      actor:
+        description: 'The user who triggered the workflow'
+        required: true
+        type: string
+      server_url:
+        description: 'The URL of the GitHub server'
+        required: true
+        type: string
+    secrets:
+      SLACK_WEBHOOK_URL:
+        required: true
+
+jobs:
+  notify:
+    name: Send Slack Notification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set Slack Message for Build Failure
+        id: build_failure_message
+        if: inputs.build_result == 'failure'
+        run: |
+          {
+            echo 'message<<EOF'
+            echo ':x: *Build Failed!*'
+            echo ''
+            echo '*Application:* `${{ inputs.project_name }}`'
+            echo '*Triggered by:* `${{ inputs.actor }}`'
+            echo ''
+            echo '<${{ inputs.server_url }}/${{ inputs.repository }}/actions/runs/${{ inputs.run_id }}|View Workflow Run>'
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set Slack Message for Success
+        id: success_message
+        if: inputs.deploy_result == 'success'
+        run: |
+          {
+            echo 'message<<EOF'
+            echo ':white_check_mark: *Deployment Successful!*'
+            echo ''
+            echo '*Application:* `${{ inputs.project_name }}`'
+            echo '*Environment:* `${{ inputs.environment }}`'
+            echo '*Image Tag:* `${{ inputs.image_tag }}`'
+            echo '*Triggered by:* `${{ inputs.actor }}`'
+            echo ''
+            echo '<${{ inputs.server_url }}/${{ inputs.repository }}/actions/runs/${{ inputs.run_id }}|View Workflow Run>'
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set Slack Message for Deployment Failure
+        id: failure_message
+        if: inputs.build_result != 'failure' && inputs.deploy_result != 'success'
+        run: |
+          {
+            echo 'message<<EOF'
+            echo ':x: *Deployment Failed!*'
+            echo ''
+            echo '*Application:* `${{ inputs.project_name }}`'
+            echo '*Environment:* `${{ inputs.environment }}`'
+            echo '*Image Tag:* `${{ inputs.image_tag }}`'
+            echo '*Triggered by:* `${{ inputs.actor }}`'
+            echo ''
+            echo '<${{ inputs.server_url }}/${{ inputs.repository }}/actions/runs/${{ inputs.run_id }}|View Workflow Run>'
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Send Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_MESSAGE: |
+            ${{ steps.build_failure_message.outputs.message }}
+            ${{ steps.success_message.outputs.message }}
+            ${{ steps.failure_message.outputs.message }}
+          SLACK_COLOR: ${{ (inputs.build_result == 'failure' || inputs.deploy_result == 'failure') && 'danger' || 'good' }}
+          SLACK_ICON_EMOJI: ":rocket:"
