@@ -46,7 +46,6 @@ on:
 
 jobs:
   notify:
-    name: Send Slack Notification
     runs-on: ubuntu-latest
     steps:
       - name: Set Slack Message for Build Failure
