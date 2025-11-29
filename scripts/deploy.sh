@@ -87,6 +87,7 @@ done
 
 if ! curl -sf "http://127.0.0.1:$NEXT_PORT/"; then
   echo "Health check failed. Aborting deployment."
+  echo "http://127.0.0.1:$NEXT_PORT/"
   sudo docker logs "$CONTAINER_NAME"
   exit 1
 fi
