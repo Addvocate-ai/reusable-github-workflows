@@ -35,6 +35,12 @@ echo "$DOCKER_PASSWORD" | sudo docker login -u "$DOCKER_USERNAME" --password-std
 echo "Pulling latest image..."
 sudo docker pull "$IMAGE_NAME"
 
+# Check and create network if it does not exist
+if ! sudo docker network ls | grep -q 'backend-network'; then
+  echo "Creating docker network 'backend-network'..."
+  sudo docker network create backend-network
+fi
+
 if [ -n "$(sudo docker ps -aq --filter name="$CONTAINER_NAME")" ]; then
   echo "Found existing container (running or stopped). Removing it: $CONTAINER_NAME"
   sudo docker rm -f "$CONTAINER_NAME"
@@ -44,7 +50,7 @@ echo "Starting new container..."
 
 if [ -z "$ENV_FILE_CONTENT" ]; then
   echo "ENV_FILE_CONTENT is empty. Running container without .env file."
-  sudo docker run -d --name "$CONTAINER_NAME" -p "$NEXT_PORT:$CONTAINER_PORT" --restart=always "$IMAGE_NAME"
+  sudo docker run -d --name "$CONTAINER_NAME" -p "$NEXT_PORT:$CONTAINER_PORT" --network backend-network --restart=always "$IMAGE_NAME"
 else
   echo "ENV_FILE_CONTENT found. Creating temporary .env file."
   # Create a temporary .env file
@@ -58,6 +64,7 @@ else
   sudo docker run -d \
     --name "$CONTAINER_NAME" \
     -p "$NEXT_PORT:$CONTAINER_PORT" \
+    --network backend-network \
     --env-file "$ENV_FILE_PATH" \
     --restart=always \
     "$IMAGE_NAME"
