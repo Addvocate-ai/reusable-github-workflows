@@ -7,10 +7,6 @@ on:
         description: 'The name of the project'
         required: true
         type: string
-      image_tag:
-        description: 'The Docker image tag'
-        required: true
-        type: string
       environment:
         description: 'The deployment environment (e.g., Staging, Production)'
         required: false
