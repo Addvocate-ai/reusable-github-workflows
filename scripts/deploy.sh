@@ -76,12 +76,12 @@ fi
 
 # 3. Health Check
 echo "Waiting for container to become healthy..."
-for i in {1..12}; do
+for i in {1..20}; do
   if curl -sf "http://127.0.0.1:$NEXT_PORT/"; then
     echo "Container is healthy!"
     break
   fi
-  echo "Attempt $i/12 failed. Retrying in 5 seconds..."
+  echo "Attempt $i/20 failed. Retrying in 5 seconds..."
   sleep 5
 done
 
