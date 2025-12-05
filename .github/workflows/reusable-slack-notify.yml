@@ -66,7 +66,7 @@ jobs:
 
       - name: Set Slack Message for Success
         id: success_message
-        if: inputs.deploy_result == 'success' && inputs.e2e_tests_result != 'failure'
+        if: inputs.deploy_result == 'success'
         run: |
           {
             echo 'message<<EOF'
@@ -82,7 +82,7 @@ jobs:
 
       - name: Set Slack Message for E2E Failure
         id: e2e_failure_message
-        if: inputs.build_result != 'failure' && inputs.deploy_result == 'success' && inputs.e2e_tests_result == 'failure'
+        if: inputs.e2e_tests_result == 'failure'
         run: |
           {
             echo 'message<<EOF'
@@ -98,7 +98,7 @@ jobs:
 
       - name: Set Slack Message for Deployment Failure
         id: failure_message
-        if: inputs.build_result != 'failure' && inputs.deploy_result != 'success'
+        if: inputs.deploy_result != 'success'
         run: |
           {
             echo 'message<<EOF'
