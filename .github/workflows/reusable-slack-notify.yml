@@ -20,6 +20,11 @@ on:
         description: 'The result of the deploy job'
         required: true
         type: string
+      e2e_tests_result:
+        description: 'The result of the E2E tests job'
+        required: false
+        type: string
+        default: 'skipped'
       run_id:
         description: 'The ID of the workflow run'
         required: true
@@ -61,11 +66,27 @@ jobs:
 
       - name: Set Slack Message for Success
         id: success_message
-        if: inputs.deploy_result == 'success'
+        if: inputs.deploy_result == 'success' && inputs.e2e_tests_result != 'failure'
         run: |
           {
             echo 'message<<EOF'
             echo ':white_check_mark: *Deployment Successful!*'
+            echo ''
+            echo '*Application:* `${{ inputs.project_name }}`'
+            echo '*Environment:* `${{ inputs.environment }}`'
+            echo '*Triggered by:* `${{ inputs.actor }}`'
+            echo ''
+            echo '<${{ inputs.server_url }}/${{ inputs.repository }}/actions/runs/${{ inputs.run_id }}|View Workflow Run>'
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set Slack Message for E2E Failure
+        id: e2e_failure_message
+        if: inputs.build_result != 'failure' && inputs.deploy_result == 'success' && inputs.e2e_tests_result == 'failure'
+        run: |
+          {
+            echo 'message<<EOF'
+            echo ':x: *E2E Tests Failed!*'
             echo ''
             echo '*Application:* `${{ inputs.project_name }}`'
             echo '*Environment:* `${{ inputs.environment }}`'
@@ -99,5 +120,6 @@ jobs:
             ${{ steps.build_failure_message.outputs.message }}
             ${{ steps.success_message.outputs.message }}
             ${{ steps.failure_message.outputs.message }}
-          SLACK_COLOR: ${{ (inputs.build_result == 'failure' || inputs.deploy_result == 'failure') && 'danger' || 'good' }}
+            ${{ steps.e2e_failure_message.outputs.message }}
+          SLACK_COLOR: ${{ (inputs.build_result == 'failure' || inputs.deploy_result == 'failure' || inputs.e2e_tests_result == 'failure') && 'danger' || 'good' }}
           SLACK_ICON_EMOJI: ":rocket:"
