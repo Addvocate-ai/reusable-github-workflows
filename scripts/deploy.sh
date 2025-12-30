@@ -119,4 +119,8 @@ else
   echo "No old container found on port $CURRENT_PORT"
 fi
 
+# 6. Cleanup unused Docker images
+echo "Cleaning up unused Docker images..."
+sudo docker image prune -a -f
+
 echo "Blue-green deployment complete."
