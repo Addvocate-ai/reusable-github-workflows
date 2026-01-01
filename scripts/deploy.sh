@@ -50,7 +50,7 @@ echo "Starting new container..."
 
 if [ -z "$ENV_FILE_CONTENT" ]; then
   echo "ENV_FILE_CONTENT is empty. Running container without .env file."
-  sudo docker run -d --name "$CONTAINER_NAME" -p "$NEXT_PORT:$CONTAINER_PORT" --network backend-network --restart=always "$IMAGE_NAME"
+  sudo docker run -d --name "$CONTAINER_NAME" -p "127.0.0.1:$NEXT_PORT:$CONTAINER_PORT" --network backend-network --restart=always "$IMAGE_NAME"
 else
   echo "ENV_FILE_CONTENT found. Creating temporary .env file."
   # Create a temporary .env file
@@ -63,7 +63,7 @@ else
 
   sudo docker run -d \
     --name "$CONTAINER_NAME" \
-    -p "$NEXT_PORT:$CONTAINER_PORT" \
+    -p "127.0.0.1:$NEXT_PORT:$CONTAINER_PORT" \
     --network backend-network \
     --env-file "$ENV_FILE_PATH" \
     --restart=always \
