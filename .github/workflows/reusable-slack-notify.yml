@@ -25,6 +25,11 @@ on:
         required: false
         type: string
         default: 'skipped'
+      health_check_result:
+        description: 'The result of the health check job'
+        required: false
+        type: string
+        default: 'skipped'
       run_id:
         description: 'The ID of the workflow run'
         required: true
@@ -96,6 +101,22 @@ jobs:
             echo 'EOF'
           } >> "$GITHUB_OUTPUT"
 
+      - name: Set Slack Message for Health Check Failure
+        id: health_check_failure_message
+        if: inputs.health_check_result == 'failure'
+        run: |
+          {
+            echo 'message<<EOF'
+            echo ':warning: *Health Check Failed!*'
+            echo ''
+            echo '*Application:* `${{ inputs.project_name }}`'
+            echo '*Environment:* `${{ inputs.environment }}`'
+            echo '*Triggered by:* `${{ inputs.actor }}`'
+            echo ''
+            echo '<${{ inputs.server_url }}/${{ inputs.repository }}/actions/runs/${{ inputs.run_id }}|View Workflow Run>'
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
       - name: Set Slack Message for Deployment Failure
         id: failure_message
         if: inputs.deploy_result != 'success'
@@ -120,6 +141,7 @@ jobs:
             ${{ steps.build_failure_message.outputs.message }}
             ${{ steps.success_message.outputs.message }}
             ${{ steps.failure_message.outputs.message }}
+            ${{ steps.health_check_failure_message.outputs.message }}
             ${{ steps.e2e_failure_message.outputs.message }}
-          SLACK_COLOR: ${{ (inputs.build_result == 'failure' || inputs.deploy_result == 'failure' || inputs.e2e_tests_result == 'failure') && 'danger' || 'good' }}
+          SLACK_COLOR: ${{ (inputs.build_result == 'failure' || inputs.deploy_result == 'failure' || inputs.health_check_result == 'failure' || inputs.e2e_tests_result == 'failure') && 'danger' || 'good' }}
           SLACK_ICON_EMOJI: ":rocket:"
